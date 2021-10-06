@@ -1,0 +1,106 @@
+---
+title: "assignment_2"
+author: "Jake Eisaguirre"
+date: "10/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(here)
+library(tidyverse)
+library(dataRetrieval)
+library(patchwork)
+```
+
+# River Stuff
+
+```{r}
+discharge <- readNWISdv(
+  siteNumber <- c("11118500", "11113500"),
+parameterCd <- "00060",  # Discharge
+startDate <- "1988-10-01", 
+endDate <- "2018-09-30"
+)
+
+#In order to pull multiple sites I created a vector of the site numbers I wanted to pull. Both sites were the included in the downloaded data set.
+  
+ven_dis <- discharge %>% 
+  filter(site_no == "11118500")
+
+paul_dis <- discharge %>% 
+  filter(site_no == "11113500")
+
+a <- ggplot(ven_dis, aes(x = Date, y = X_00060_00003)) + 
+  geom_line(col = "blue") +
+  theme_classic() +
+  labs(title = "Ventura" ) +
+  ylab("Discharge cm^3/s")
+
+b <- ggplot(paul_dis, aes(x = Date, y = X_00060_00003)) + 
+  geom_line(col = "red") +
+  theme_classic() +
+  labs(title = "Santa Paula" ) +
+  ylab("Discharge cm^3/s")
+
+a/b
+```
+```{r}
+c_discharge <- readNWISdv(
+  siteNumber <- c("11118500", "11113500"),
+parameterCd <- "00060",  # Discharge
+startDate <- "2021-10-01", 
+endDate <- "2021-10-06"
+)
+
+c_ven_dis <- c_discharge %>% 
+  filter(site_no == "11118500")
+
+c_paul_dis <- c_discharge %>% 
+  filter(site_no == "11113500")
+
+a <- ggplot(c_ven_dis, aes(x = Date, y = X_00060_00003)) + 
+  geom_line(col = "blue") +
+  theme_classic() +
+  labs(title = "Ventura" ) +
+  ylab("Discharge cm^3/s")
+
+b <- ggplot(c_paul_dis, aes(x = Date, y = X_00060_00003)) + 
+  geom_line(col = "red") +
+  theme_classic() +
+  labs(title = "Santa Paula" ) +
+  ylab("Discharge cm^3/s")
+
+a/b
+
+
+```
+# Alaska Stuff
+
+```{r}
+
+data_url = "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3A7fc6f6db-c5ea-426a-a743-1f2edafb43b8"
+
+path = ("/Users/JaketheBoss/Documents/Bren/fall_courses/EDS_213/assignment_2_EDS213")
+library(metajam)
+data_path = download_d1_data(data_url, path)
+
+data <- read_csv(here("Data", "household_language.csv"))
+
+p_lang <- data %>% 
+  filter(Year >= 2009,
+         Year <= 2015) %>% 
+  group_by(Year = Year) %>% 
+  summarize(p_e = sum(speak_only_english)/sum(total)*100)
+
+ggplot(data = p_lang, aes(x = Year, y = p_e))+
+  geom_point() +
+  theme_classic() +
+  ylab("Percent") +
+  labs(title = "AK Residents Who Only SpeakEnglish")
+
+
+```
+
