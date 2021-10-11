@@ -13,6 +13,7 @@ library(here)
 library(tidyverse)
 library(dataRetrieval)
 library(patchwork)
+library(lubridate)
 ```
 
 # River Stuff
@@ -48,32 +49,81 @@ b <- ggplot(paul_dis, aes(x = Date, y = X_00060_00003)) +
 a/b
 ```
 ```{r}
-c_discharge <- readNWISdv(
-  siteNumber <- c("11118500", "11113500"),
-parameterCd <- "00060",  # Discharge
-startDate <- "2021-10-01", 
-endDate <- "2021-10-06"
-)
 
-c_ven_dis <- c_discharge %>% 
+startdate = as.Date("2021-10-04T00:00")
+enddate = as.Date("2021-10-05T24:00")
+
+c_dis <- readNWISuv(
+  siteNumber = c("11118500", "11113500"), parameterCd = "00060", 
+  startDate = startdate, endDate = enddate,
+  tz = "PST")
+
+n_v <- c_dis %>% 
   filter(site_no == "11118500")
 
-c_paul_dis <- c_discharge %>% 
+j <- ggplot(n_v, aes(x = dateTime, y =X_00060_00000)) +
+  geom_line() +
+  theme_classic() +
+  labs(title = "Ventura River 10/04/21-10/05/21" ) +
+  ylab("Discharge cm^3/s") +
+  xlab("Date")
+
+n_c <- c_dis %>% 
   filter(site_no == "11113500")
 
-a <- ggplot(c_ven_dis, aes(x = Date, y = X_00060_00003)) + 
-  geom_line(col = "blue") +
+k <- ggplot(n_c, aes(x = dateTime, y = X_00060_00000)) +
+  geom_line() +
   theme_classic() +
-  labs(title = "Ventura" ) +
-  ylab("Discharge cm^3/s")
+  labs(title = "Santa Paula River 10/04/21-10/05/21" ) +
+  ylab("Discharge cm^3/s") +
+  xlab("Date")
 
-b <- ggplot(c_paul_dis, aes(x = Date, y = X_00060_00003)) + 
-  geom_line(col = "red") +
-  theme_classic() +
-  labs(title = "Santa Paula" ) +
-  ylab("Discharge cm^3/s")
+j/k
 
-a/b
+
+#It looks like peak flow occurred for the Santa Paula river at 3 am and about 12:30 am for the Ventura river. However I would say there was not much of a peak for Ventura as discharge seems to oscillate between night a day. 
+
+
+# Below is my over complicated code to look for peak flow between the rivers. I uderstand date formate better though.
+
+# c_ven_dis <- c_dis %>% 
+#   mutate(dateTime = ymd_hms( dateTime, tz = "PST")) %>%  #parse_date_time(dateTime, orders = "ymd HMS", tz = "PST")) %>% 
+#   filter(site_no == "11118500") %>% 
+#   group_by(day = day(dateTime), hour = hour(dateTime)) %>% 
+#   unite("day_hour", day:hour, sep = "-") %>% 
+#   group_by(day_hour) %>% 
+#   summarise(mean_hour = mean(X_00060_00000)) 
+#  
+# 
+# c_paul_dis <- c_dis %>%
+#  mutate(dateTime = ymd_hms( dateTime, tz = "PST")) %>% 
+#   filter(site_no == "11113500") %>% 
+#   group_by(day = day(dateTime), hour = hour(dateTime)) %>% 
+#   unite("day_hour", day:hour, sep = "-") %>% 
+#   group_by(day_hour) %>% 
+#   summarise(mean_hour = mean(X_00060_00000)) 
+# 
+# 
+# c <- ggplot(c_ven_dis, aes(x = day_hour, y = mean_hour)) + 
+#   geom_point(col = "blue") +
+#   theme_classic() +
+#   labs(title = "Ventura River 10/04/21" ) +
+#   ylab("Discharge cm^3/s") +
+#   xlab("Hourly Mean") +
+#   theme(axis.text.x = element_text(angle = 90))
+# 
+# c
+# 
+# 
+# d <- ggplot(c_paul_dis, aes(x = day_hour, y = mean_hour)) + 
+#   geom_point(col = "red") +
+#   theme_classic() +
+#   labs(title = "Santa Paula 10/04/21" ) +
+#   ylab("Discharge cm^3/s") +
+#   xlab("Hourly Mean") +
+#   theme(axis.text.x = element_text(angle = 90))
+# 
+# c/d
 
 
 ```
@@ -93,13 +143,15 @@ p_lang <- data %>%
   filter(Year >= 2009,
          Year <= 2015) %>% 
   group_by(Year = Year) %>% 
-  summarize(p_e = sum(speak_only_english)/sum(total)*100)
+  summarize(p_e = sum(speak_only_english)/sum(total)*100) %>% 
+  summarise(Year, p_e)
 
 ggplot(data = p_lang, aes(x = Year, y = p_e))+
-  geom_point() +
+  geom_line() +
   theme_classic() +
   ylab("Percent") +
-  labs(title = "AK Residents Who Only SpeakEnglish")
+  labs(title = "AK Residents Who Only Speak English 2009-2015") +
+  geom_point()
 
 
 ```
